@@ -1,0 +1,57 @@
+GIT
+  remote: https://github.com/andytinycat/ruby-mp4info
+  revision: f48c872a28fb459c7d624335f186a6b8f76fa9b2
+  specs:
+    mp4info (1.7.3)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    async_sinatra (1.0.0)
+      rack (>= 1.4.1)
+      sinatra (>= 1.3.2)
+    backports (2.7.1)
+    bson (1.8.2)
+    bson_ext (1.8.2)
+      bson (~> 1.8.2)
+    daemons (1.1.9)
+    dmap-ng (0.2.6)
+    dnssd (2.0)
+    eventmachine (1.0.0)
+    mongo (1.8.2)
+      bson (~> 1.8.2)
+    rack (1.4.1)
+    rack-protection (1.3.2)
+      rack
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    sinatra (1.3.4)
+      rack (~> 1.4)
+      rack-protection (~> 1.3)
+      tilt (~> 1.3, >= 1.3.3)
+    sinatra-contrib (1.3.2)
+      backports (>= 2.0)
+      eventmachine
+      rack-protection
+      rack-test
+      sinatra (~> 1.3.0)
+      tilt (~> 1.3)
+    thin (1.5.0)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+    tilt (1.3.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  async_sinatra
+  bson_ext
+  dmap-ng
+  dnssd
+  mongo
+  mp4info!
+  sinatra
+  sinatra-contrib
+  thin

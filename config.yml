@@ -1,0 +1,7 @@
+server_name: Test
+port: 4567
+version: 0.1
+databases:
+  -
+    path: /Users/andy/testfiles
+    name: Test
