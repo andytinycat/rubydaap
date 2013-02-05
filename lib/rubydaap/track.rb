@@ -5,10 +5,17 @@ class Track
   include Mongo
 
   def Track.get_all
-    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
+    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
     tracks = Array.new
     storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
-    tracks
+    tracks.each_with_index.map {|track,i| track.to_dmap(i+1)}
+  end
+
+  def Track.get_all_playlist
+    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
+    tracks = Array.new
+    storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
+    tracks.each_with_index.map {|track,i| track.to_short_dmap(i+1)}
   end
 
   def initialize(args)
@@ -95,13 +102,14 @@ class Track
     json
   end
 
-  def to_dmap
+  def to_dmap(id)
+    puts id
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
-        DMAP::Tag.new(:miid, 1),
+        DMAP::Tag.new(:miid, id),
         DMAP::Tag.new(:minm, self.title),
-        DMAP::Tag.new(:mper, 1),
+        DMAP::Tag.new(:mper, id),
         DMAP::Tag.new(:asal, self.album),
         DMAP::Tag.new(:agrp, ""),
         DMAP::Tag.new(:asar, self.artist),
@@ -124,7 +132,7 @@ class Track
         DMAP::Tag.new(:assz, self.bytes),
         DMAP::Tag.new(:asst, 0),
         DMAP::Tag.new(:assp, 0),
-        DMAP::Tag.new(:astm, self.milliseconds),
+        DMAP::Tag.new(:astm, self.total_seconds * 1000),
         DMAP::Tag.new(:astc, self.track_total),
         DMAP::Tag.new(:astn, self.track_number),
         DMAP::Tag.new(:asur, 0),
@@ -135,12 +143,12 @@ class Track
     )
   end 
 
-  def to_short_dmap
+  def to_short_dmap(id)
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
         DMAP::Tag.new(:asdk, 0),
-        DMAP::Tag.new(:miid, 1),
+        DMAP::Tag.new(:miid, id),
         DMAP::Tag.new(:mcti, 1),
         DMAP::Tag.new(:minm, self.title)
       ]
