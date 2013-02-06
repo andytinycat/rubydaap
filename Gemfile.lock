@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/andytinycat/mongo_sequence
+  revision: 91aef8ba667ac37f81770419e726a3b7ee62d0e2
+  specs:
+    mongo_sequence (1.0.0)
+      mongo (> 1.1)
+
+GIT
   remote: https://github.com/andytinycat/ruby-mp4info
   revision: f48c872a28fb459c7d624335f186a6b8f76fa9b2
   specs:
@@ -51,6 +58,7 @@ DEPENDENCIES
   dmap-ng
   dnssd
   mongo
+  mongo_sequence!
   mp4info!
   sinatra
   sinatra-contrib

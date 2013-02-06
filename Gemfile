@@ -8,3 +8,4 @@ gem "thin"
 gem "dmap-ng" 
 gem "mp4info", :git => "https://github.com/andytinycat/ruby-mp4info", :require => 'mp4info'
 gem "async_sinatra", :require => 'sinatra/async'
+gem "mongo_sequence", :git => "https://github.com/andytinycat/mongo_sequence"

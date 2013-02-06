@@ -1,16 +1,19 @@
 require 'mp4info'
 require 'dmap'
+require 'mongo_sequence'
+
+MongoSequence.database = Mongo::Connection.new.db("rubydaap")
 
 class Track
   include Mongo
 
   def Track.count
-    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
+    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
     storage.count
   end
 
   def Track.get
-    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
+    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
     tracks = Array.new
     storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
     if block_given?
@@ -20,12 +23,17 @@ class Track
     end
   end
 
+  def Track.get_by_itunes_id(itunes_id)
+    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
+    Track.new(:hash => storage.find({:itunes_id => itunes_id}))
+  end
+
   def Track.get_all_dmap
-    Track.get{|track,i| track.to_dmap(i+1)}
+    Track.get{|track,i| track.to_dmap(i)}
   end
 
   def Track.get_all_short_dmap
-    Track.get{|track,i| track.to_short_dmap(i+1)}
+    Track.get{|track,i| track.to_short_dmap(i)}
   end
 
   def initialize(args)
@@ -66,7 +74,8 @@ class Track
         formatted_time          TIME          
         copyright               COPYRIGHT     
         encrypted               ENCRYPTED
-        _id                     ID
+        _id                     FAKE
+        itunes_id               FAKE
       )]
 
       lookup_table.each_pair do |key, value|
@@ -83,6 +92,11 @@ class Track
 
         if key == "_id"
           @info[key] = Digest::MD5.file(@path).hexdigest
+          next
+        end
+
+        if key == "itunes_id"
+          @info[key] = MongoSequence[:global].next
           next
         end
 
@@ -116,9 +130,9 @@ class Track
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
-        DMAP::Tag.new(:miid, id),
+        DMAP::Tag.new(:miid, self.itunes_id),
         DMAP::Tag.new(:minm, self.title),
-        DMAP::Tag.new(:mper, id),
+        DMAP::Tag.new(:mper, self.itunes_id),
         DMAP::Tag.new(:asal, self.album),
         DMAP::Tag.new(:agrp, ""),
         DMAP::Tag.new(:asar, self.artist),
@@ -157,8 +171,8 @@ class Track
       [
         DMAP::Tag.new(:mikd, 2),
         DMAP::Tag.new(:asdk, 0),
-        DMAP::Tag.new(:miid, id),
-        DMAP::Tag.new(:mcti, id),
+        DMAP::Tag.new(:miid, self.itunes_id),
+        DMAP::Tag.new(:mcti, self.itunes_id),
         DMAP::Tag.new(:minm, self.title)
       ]
     )

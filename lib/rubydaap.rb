@@ -11,10 +11,13 @@ require 'dmap-ng'
 require 'mongo'
 require 'logger'
 require 'digest/md5'
+require 'mongo_sequence'
+require 'pp'
 
 require_relative 'rubydaap/logging'
 require_relative 'rubydaap/track'
 require_relative 'rubydaap/scanner'
+
 
 class App < Sinatra::Base
   register Sinatra::Async       # Used for long-lived /update call
@@ -39,8 +42,13 @@ class App < Sinatra::Base
   # Register with Bonjour so iTunes can find us
   bonjour = DNSSD.register($server_name, "_daap._tcp", nil, Sinatra::Application.port)
 
-  # Headers to send on every request
   before do
+    # iTunes sends a weird full URI when requesting songs, with
+    # the daap:// scheme. Rewrite this to an appropriate Sinatra
+    # handler.
+    if request.env['REQUEST_URI'] =~ /^daap:\/\/[^\/]+(.*)/
+      request.path_info = $1
+    end
     headers 'DAAP-Server' => "ruby-daap/#{settings.version}"
     content_type "application/x-dmap-tagged"
   end
@@ -206,6 +214,10 @@ class App < Sinatra::Base
     ])
     p resp if $dmap_debug
     resp.to_dmap
+  end
+
+  get '/databases/1/items/*' do
+    puts "HEY"
   end
 
   run! if app_file == $0

@@ -28,7 +28,4 @@ class Scanner
     end
   end
 
-  def run
-  end
-
 end
