@@ -54,8 +54,8 @@ class App < Sinatra::Base
     resp = DMAP.build do
       msrv do
         mstt 200
-        mpro [0,2,0,6]
-        apro [0,3,0,6]
+        mpro [0,2,0,2]
+        apro [0,3,0,2]
         minm $server_name
         mslr 1
         msau 0
@@ -67,7 +67,7 @@ class App < Sinatra::Base
         msbr 1
         msqy 1
         msix 1
-        msrs 1
+        msrs 0
         msdc 1
       end
     end
@@ -79,8 +79,7 @@ class App < Sinatra::Base
   # We assign them a random session ID.
   get '/login' do
 
-    # Assign a random ID based on remote address and time
-    sid = Digest::MD5.hexdigest(@env['REMOTE_ADDR'] + Time.new.to_s).to_i
+    sid = rand(4095)
 
     resp = DMAP.build do
       mlog do
@@ -183,7 +182,7 @@ class App < Sinatra::Base
             miid 1
             mper 1
             minm $server_name
-            mimc 2
+            mimc 3
             abpl 1
           end
         end

@@ -103,7 +103,6 @@ class Track
   end
 
   def to_dmap(id)
-    puts id
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
@@ -124,7 +123,7 @@ class Track
         DMAP::Tag.new(:asdn, 0),
         DMAP::Tag.new(:asdb, 0),
         DMAP::Tag.new(:aseq, ""),
-        DMAP::Tag.new(:asfm, "mp3"),
+        DMAP::Tag.new(:asfm, "m4a"),
         DMAP::Tag.new(:asgn, self.genre),
         DMAP::Tag.new(:asdt, ""),
         DMAP::Tag.new(:asrv, 0),
@@ -149,7 +148,7 @@ class Track
         DMAP::Tag.new(:mikd, 2),
         DMAP::Tag.new(:asdk, 0),
         DMAP::Tag.new(:miid, id),
-        DMAP::Tag.new(:mcti, 1),
+        DMAP::Tag.new(:mcti, id),
         DMAP::Tag.new(:minm, self.title)
       ]
     )
