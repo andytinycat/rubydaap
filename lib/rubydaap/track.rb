@@ -4,18 +4,28 @@ require 'dmap'
 class Track
   include Mongo
 
-  def Track.get_all
-    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
-    tracks = Array.new
-    storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
-    tracks.each_with_index.map {|track,i| track.to_dmap(i+1)}
+  def Track.count
+    storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
+    storage.count
   end
 
-  def Track.get_all_playlist
+  def Track.get
     storage  = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
     tracks = Array.new
     storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
-    tracks.each_with_index.map {|track,i| track.to_short_dmap(i+1)}
+    if block_given?
+      tracks.each_with_index.map {|track,i| yield track, i}
+    else
+      tracks
+    end
+  end
+
+  def Track.get_all_dmap
+    Track.get{|track,i| track.to_dmap(i+1)}
+  end
+
+  def Track.get_all_short_dmap
+    Track.get{|track,i| track.to_short_dmap(i+1)}
   end
 
   def initialize(args)

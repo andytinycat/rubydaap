@@ -23,7 +23,7 @@ class App < Sinatra::Base
   # Config file
   config_file "../config.yml"
 
-  # Global var for server name, used all over the place
+  # Global var for server name, used in various responses
   $server_name = settings.server_name
 
   # Debug enabled
@@ -35,9 +35,6 @@ class App < Sinatra::Base
   set :port, Sinatra::Application.port
   set :logging, true
   set :show_exceptions, true
-
-  # Hold a list of the clients already connected
-  clients = Array.new
 
   # Register with Bonjour so iTunes can find us
   bonjour = DNSSD.register($server_name, "_daap._tcp", nil, Sinatra::Application.port)
@@ -95,6 +92,11 @@ class App < Sinatra::Base
   # the song list. The second call has a 'delta' parameter equal
   # to the last revision they received. This is a long-lived request
   # that iTunes expects to keep open until an update happens.
+  # The call post-login has revision != delta - we return immediately
+  # so the client can get on with connecting. After retrieving a track
+  # list, the update call has revision == data; the client expects this
+  # to get a response to this later, with a higher revision number. This
+  # is what we do using async_sinatra.
   aget '/update' do
     vers  = params['revision-number'].to_i
     delta = params['delta'].to_i
@@ -135,7 +137,6 @@ class App < Sinatra::Base
         muty 0
         mtco 1
         mrco 1
-          
         mlcl do
           mlit do
             miid 1
@@ -145,7 +146,6 @@ class App < Sinatra::Base
             mctc 1
           end
         end
-
       end
     end
     p resp if $dmap_debug
@@ -154,7 +154,7 @@ class App < Sinatra::Base
 
   # Song list
   get '/databases/1/items' do
-    tracks = Track.get_all
+    tracks = Track.get_all_dmap
     resp = DMAP::Tag.new(:adbs, [
       DMAP::Tag.new(:mstt, 200),
       DMAP::Tag.new(:muty, 0),
@@ -170,7 +170,7 @@ class App < Sinatra::Base
 
   # Playlist list
   get '/databases/1/containers' do
-    tracks = Track.get_all_playlist
+    count = Track.count
     resp = DMAP.build do
       aply do
         mstt 200
@@ -182,19 +182,19 @@ class App < Sinatra::Base
             miid 1
             mper 1
             minm $server_name
-            mimc 3
+            mimc count
             abpl 1
           end
         end
       end
     end
-    p resp
+    p resp if $dmap_debug
     resp.to_dmap
   end
 
   # Song list in playlist
   get '/databases/1/containers/1/items' do
-    tracks = Track.get_all_playlist
+    tracks = Track.get_all_short_dmap
     resp = DMAP::Tag.new(:apso, [
       DMAP::Tag.new(:mstt, 200),
       DMAP::Tag.new(:muty, 0),
@@ -204,7 +204,7 @@ class App < Sinatra::Base
         tracks
       )
     ])
-    p resp
+    p resp if $dmap_debug
     resp.to_dmap
   end
 

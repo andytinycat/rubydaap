@@ -16,5 +16,5 @@ require_relative 'lib/rubydaap/scanner'
 
 Scanner.new("/Users/andy/musictest")
 
-tracks = Track.get_all
+tracks = Track.get_all_dmap
 p tracks
