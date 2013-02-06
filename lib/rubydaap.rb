@@ -30,7 +30,7 @@ class App < Sinatra::Base
   $server_name = settings.server_name
 
   # Debug enabled
-  $dmap_debug = true
+  $dmap_debug = false
 
   # Use Thin; iTunes doesn't seem to like something
   # in the way Sinatra chunks the request up.
@@ -216,8 +216,11 @@ class App < Sinatra::Base
     resp.to_dmap
   end
 
-  get '/databases/1/items/*' do
-    puts "HEY"
+  # Play a file
+  # /databases/1/items/109.m4a?session-id=733
+  get %r{/databases/1/items/(\d+)\.m4a} do
+    track = Track.get_by_itunes_id(params[:captures].first.to_i)
+    send_file track.path 
   end
 
   run! if app_file == $0

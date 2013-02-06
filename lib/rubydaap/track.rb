@@ -25,7 +25,7 @@ class Track
 
   def Track.get_by_itunes_id(itunes_id)
     storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
-    Track.new(:hash => storage.find({:itunes_id => itunes_id}))
+    Track.new( :hash => storage.find({:itunes_id => itunes_id}).to_a.first )
   end
 
   def Track.get_all_dmap
@@ -43,75 +43,67 @@ class Track
       @info = Hash.new
       @path = args[:path]
       @file = MP4Info.open(@path)
-      lookup_table = Hash[*%w(
-        album                   ALB
-        apple_store_id          APID          
-        artist                  ART           
-        comment                 CMT           
-        compilation             CPIL          
-        copyright               CPRT          
-        year                    DAY           
-        disk_number_and_total   DISK          
-        genre                   GNRE          
-        grouping                GRP           
-        title                   NAM           
-        rating                  RTNG          
-        tempo                   TMPO          
-        encoder                 TOO           
-        track_number_and_total  TRKN          
-        track_number            TRKN
-        track_total             TRKN
-        author                  WRT           
-        mpeg_version            VERSION       
-        layer                   LAYER         
-        bitrate                 BITRATE       
-        frequency               FREQUENCY     
-        bytes                   SIZE          
-        total_seconds           SECS          
-        minutes                 MM            
-        seconds                 SS            
-        milliseconds            MS            
-        formatted_time          TIME          
-        copyright               COPYRIGHT     
-        encrypted               ENCRYPTED
-        _id                     FAKE
-        itunes_id               FAKE
-      )]
+      lookup_table = {
+        album:                   'ALB',
+        apple_store_id:          'APID',
+        artist:                  'ART',           
+        comment:                 'CMT',
+        compilation:             'CPIL',          
+        copyright:               'CPRT',          
+        year:                    'DAY',           
+        disk_number_and_total:   'DISK',          
+        genre:                   'GNRE',          
+        grouping:                'GRP',           
+        title:                   'NAM',           
+        rating:                  'RTNG',          
+        tempo:                   'TMPO',          
+        encoder:                 'TOO',
+        track_number_and_total:  'TRKN',
+        track_number:            Proc.new {self.track_number_and_total[0]},
+        track_total:             Proc.new {self.track_number_and_total[1]},
+        author:                  'WRT',
+        mpeg_version:            'VERSION',      
+        layer:                   'LAYER',       
+        bitrate:                 'BITRATE',       
+        frequency:               'FREQUENCY',
+        bytes:                   'SIZE',
+        total_seconds:           'SECS',
+        minutes:                 'MM',
+        seconds:                 'SS',
+        milliseconds:            'MS',
+        formatted_time:          'TIME',
+        copyright:               'COPYRIGHT',
+        encrypted:               'ENCRYPTED',
+        _id:                     Proc.new {Digest::MD5.file(@path).hexdigest},
+        itunes_id:               Proc.new {MongoSequence[:global].next},
+        path:                    Proc.new {@path}
+      }
 
       lookup_table.each_pair do |key, value|
+
+        if value.is_a? Proc
+          @info[key] = instance_eval &value
+          next
+        end
     
-        if key == "track_number"
-          @info[key] = @file.send(value.to_sym)[0]
-          next
-        end
-
-        if key == "track_total"
-          @info[key] = @file.send(value.to_sym)[1]
-          next
-        end
-
-        if key == "_id"
-          @info[key] = Digest::MD5.file(@path).hexdigest
-          next
-        end
-
-        if key == "itunes_id"
-          @info[key] = MongoSequence[:global].next
-          next
-        end
-
-        @info[key] = @file.send(value.to_sym)
+        @info[key] = @file.send(value)
       end
 
     elsif args.has_key? :hash
-      @info = args[:hash] 
+      # Keys returned from MongoDB are strings, not symbols; we need them
+      # to be symbols for the above lookup table to work.
+      @info = Hash.new
+      from_mongo = args[:hash] 
+      from_mongo.each_pair do |key, value|
+        @info[key.to_sym] = value
+      end
     end
 
   end
 
   def method_missing(sym, *args)
-    if @info.has_key?(sym.to_s)
-      @info[sym.to_s] || ""
+    if @info.has_key?(sym)
+      @info[sym] || ""
     else
       raise "Metadata field '#{sym.to_s}' not found"
     end
@@ -127,6 +119,7 @@ class Track
   end
 
   def to_dmap(id)
+    p @info
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
