@@ -10,3 +10,7 @@ gem "mp4info", :git => "https://github.com/andytinycat/ruby-mp4info", :require =
 gem "async_sinatra", :require => 'sinatra/async'
 gem "mongo_sequence", :git => "https://github.com/andytinycat/mongo_sequence"
 gem "taglib-ruby", :require => 'taglib'
+gem "rb-fsevent", :require => false
+gem "rb-fchange", :require => false
+gem "rb-inotify", :require => false
+gem "listen"

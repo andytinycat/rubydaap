@@ -2,20 +2,18 @@ require 'mp4info'
 require 'dmap'
 require 'mongo_sequence'
 
+
 MongoSequence.database = Mongo::Connection.new.db("rubydaap")
 
 class Track
-  include Mongo
 
   def self.count
-    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
-    storage.count
+    $db.count
   end
 
   def self.get
-    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
     tracks = Array.new
-    storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
+    $db.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
     if block_given?
       tracks.each_with_index.map {|track,i| yield track, i}
     else
@@ -24,8 +22,7 @@ class Track
   end
 
   def self.get_by_itunes_id(itunes_id)
-    storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
-    Track.new( :hash => storage.find({:itunes_id => itunes_id}).to_a.first )
+    Track.new( :hash => $db.find({:itunes_id => itunes_id}).to_a.first )
   end
 
   def self.get_all_dmap
@@ -64,6 +61,10 @@ class Track
         @info[key] = file.send(value)
       end
 
+    # Dispense with file so we don't hold it open and screw things up
+    file = nil
+    track_type.close()
+
     elsif args.has_key? :hash
       # Keys returned from MongoDB are strings, not symbols; we need them
       # to be symbols for the above lookup table to work.
@@ -73,6 +74,7 @@ class Track
         @info[key.to_sym] = value
       end
     end
+
 
   end
 
@@ -141,14 +143,11 @@ class Track
   end
 
   def select_track_type(path)
-    puts TrackTypes.constants
+    Dir[File.dirname(__FILE__) + '/tracktypes/*.rb'].each {|file| require file }
     TrackTypes.constants.each do |track_type|
       klass = TrackTypes.const_get(track_type)
-      puts "Path: #{path}"
       if klass.can_handle?(path)
-        thing = klass.new(path)
-        puts "Thing class: #{thing.class}"
-        return thing
+        return klass.new(path)
       end
     end
     nil

@@ -25,6 +25,8 @@ GEM
     dmap-ng (0.2.6)
     dnssd (2.0)
     eventmachine (1.0.0)
+    ffi (1.3.1)
+    listen (0.7.2)
     mongo (1.8.2)
       bson (~> 1.8.2)
     rack (1.5.1)
@@ -32,6 +34,11 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    rb-fchange (0.0.6)
+      ffi
+    rb-fsevent (0.9.3)
+    rb-inotify (0.9.0)
+      ffi (>= 0.5.0)
     sinatra (1.3.4)
       rack (~> 1.4)
       rack-protection (~> 1.3)
@@ -58,9 +65,13 @@ DEPENDENCIES
   bson_ext
   dmap-ng
   dnssd
+  listen
   mongo
   mongo_sequence!
   mp4info!
+  rb-fchange
+  rb-fsevent
+  rb-inotify
   sinatra
   sinatra-contrib
   taglib-ruby

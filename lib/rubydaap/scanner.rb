@@ -1,33 +1,53 @@
 class Scanner
-  include Logging
   include Mongo
 
   def initialize(*paths)
-    @storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
     @watch_paths = Array.new.push(*paths)
+
+    $log.info("Scanner watching paths: #{@watch_paths.join(", ")}")
 
     @watch_paths.each do |watch_path|
       Find.find(watch_path) do |path|
-        if FileTest.directory?(path)
-          next
-        else
-          begin
-            track = Track.new(:path => path)
-            begin
-              # Make sure we haven't already added it
-              if @storage.find("_id" => track._id).to_a.length == 0
-                logger.warn "Added track with details: #{track.to_json}"
-                @storage.insert(track.to_json)
-              end
-            rescue Mongo::OperationFailure => e
-              logger.error "Failed to store track in DB: #{e.message}"
-            end 
-          rescue RuntimeError => e
-            puts e.message
-          end
-        end
+        add_track(path)
       end
     end
+  end
+
+  def run
+    @watch_paths.each do |path|
+      listener = Listen.to(path)
+      callback = Proc.new do |modified,added,removed| 
+        if added.size > 0
+          $log.info("New file(s) detected: #{added.join(", ")}")
+          added.each {|file| add_track(file)}
+        end
+        if removed.size > 0
+          $log.info("File(s) deleted: #{removed.join(", ")}")
+          removed.each {|file| remove_track(file)}
+        end
+      end
+      listener.change(&callback)
+      listener.start(false) # doesn't block execution
+    end
+  end 
+
+  def add_track(path)
+    return if FileTest.directory?(path)
+    begin
+      track = Track.new(:path => path)
+      # Make sure we haven't already added it
+      if $db.find("_id" => track._id).to_a.length == 0
+        $log.info("Adding file: #{path}; artist: #{track.artist} title #{track.title} album #{track.album}")
+        $db.insert(track.to_json)
+      end
+    rescue RuntimeError => e
+      $log.info("File not recognised by any TrackType: #{path}")
+    end 
+  end
+
+  def remove_track(path)
+    return if FileTest.directory?(path)
+    $db.remove("path" => path)
   end
 
 end

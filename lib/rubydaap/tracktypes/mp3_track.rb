@@ -46,5 +46,10 @@ module TrackTypes
       }
     end
 
+    def close
+      @file.close
+      @file = nil
+    end
+
   end
 end

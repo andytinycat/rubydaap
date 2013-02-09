@@ -1,5 +1,5 @@
 module TrackTypes
-  class M4ATrack < Track
+  class M4ATrack < ::Track
 
     attr_reader :file
 
@@ -30,6 +30,10 @@ module TrackTypes
         path:                    Proc.new {@path},
         filetype:                Proc.new {"m4a"}
       }
+    end
+
+    def close
+      # noop
     end
 
   end
