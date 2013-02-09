@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+# Get to the right dir
+Dir.chdir(File.dirname(__FILE__) + "/..")
+
+# Run thin
+system("thin -C thin-config.yml start")

@@ -7,6 +7,7 @@ require 'logger'
 require 'digest/md5'
 require 'find'
 require 'singleton'
+require 'yaml'
 
 require_relative 'rubydaap/dmapcache'
 require_relative 'rubydaap/track'
@@ -24,6 +25,9 @@ class App < Sinatra::Base
   # Config file
   config_file "../config.yml"
 
+  # Read Thin's config file to get the port we're listening on
+  port = YAML.load_file(File.dirname(__FILE__) + "/../thin-config.yml")['port']
+
   # Global var for server name, used in various responses
   $server_name = settings.server_name
 
@@ -34,18 +38,11 @@ class App < Sinatra::Base
   # Debug enabled
   $dmap_debug = false
 
-  # Use Thin; iTunes doesn't seem to like something
-  # in the way Sinatra chunks the request up.
-  #set :server, 'thin'
-  #set :port, Sinatra::Application.port
-  ##set :logging, true
-  #set :show_exceptions, true
-
   $log.info("Starting up")
 
   # Register with Bonjour so iTunes can find us
-  bonjour = DNSSD.register($server_name, "_daap._tcp", nil, Sinatra::Application.port)
-  $log.info("Registered on Bonjour with server name '#{server_name}'")  
+  bonjour = DNSSD.register($server_name, "_daap._tcp", nil, port)
+  $log.info("Registered on Bonjour with server name '#{server_name}' and port #{port}")  
 
   before do
     # iTunes sends a weird full URI when requesting songs, with
@@ -115,7 +112,7 @@ class App < Sinatra::Base
     vers  = params['revision-number'].to_i
     delta = params['delta'].to_i
     if vers == delta
-      $log.info("Client #{request.ip} requesting to be notified about updates; handling with async")
+      $log.info("Client #{request.ip} requesting to be notified about updates; handling with async; notify in #{settings.update_period} seconds")
       vers = vers + 1
       resp = DMAP.build do
         mupd do
@@ -123,7 +120,7 @@ class App < Sinatra::Base
           musr vers
         end
       end
-      EM.add_timer(15) {
+      EM.add_timer(settings.update_period) {
         body { 
           p resp if $dmap_debug
           $log.info("Sending update to client #{request.ip}")

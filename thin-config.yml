@@ -1,0 +1,6 @@
+---
+port: 13689
+log: log/rubydaap.log
+daemonize: true
+pid: log/rubydaap.pid
+timeout: 300

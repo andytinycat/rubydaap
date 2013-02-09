@@ -1,6 +1,7 @@
 server_name: Ruby DAAP Test
 port: 4567
 version: 0.1
+update_period: 120
 watch_paths:
   - /Users/andy/Music
   - /Users/andy/musictest

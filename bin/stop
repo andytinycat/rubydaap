@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+# Get to the right dir
+Dir.chdir(File.dirname(__FILE__) + "/..")
+
+# Stop thin.
+# Use force or it'll wait for connections to terminate;
+# and we will *definitely* have long lived connections around
+# because of how DAAP updates work.
+system("thin -C thin-config.yml -f stop")
