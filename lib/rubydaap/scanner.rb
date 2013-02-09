@@ -10,8 +10,8 @@ class Scanner
 
     @watch_paths.each do |watch_path|
       Find.find(watch_path) do |path|
-        Find.prune if path =~ /^.AppleDouble/
-        Find.prune if path =~ /^\._/
+        Find.prune if File.basename(path) =~ /^.AppleDouble/
+        Find.prune if File.basename(path) =~ /^._/
         add_track(path)
       end
     end
