@@ -8,11 +8,11 @@ class Scanner
 
     $log.info("Scanner watching paths: #{@watch_paths.join(", ")}")
 
-    #@watch_paths.each do |watch_path|
-    #  Find.find(watch_path) do |path|
-    #    add_track(path)
-    #  end
-    #end
+    @watch_paths.each do |watch_path|
+      Find.find(watch_path) do |path|
+        add_track(path)
+      end
+    end
   end
 
   def run
