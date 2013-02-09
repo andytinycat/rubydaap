@@ -7,12 +7,12 @@ MongoSequence.database = Mongo::Connection.new.db("rubydaap")
 class Track
   include Mongo
 
-  def Track.count
+  def self.count
     storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
     storage.count
   end
 
-  def Track.get
+  def self.get
     storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")    
     tracks = Array.new
     storage.find().to_a.each {|bson| tracks << Track.new(:hash => bson)}
@@ -23,17 +23,17 @@ class Track
     end
   end
 
-  def Track.get_by_itunes_id(itunes_id)
+  def self.get_by_itunes_id(itunes_id)
     storage = MongoClient.new("localhost", 27017).db("rubydaap").collection("tracks")
     Track.new( :hash => storage.find({:itunes_id => itunes_id}).to_a.first )
   end
 
-  def Track.get_all_dmap
-    Track.get{|track,i| track.to_dmap(i)}
+  def self.get_all_dmap
+    self.get{|track,i| track.to_dmap(i)}
   end
 
-  def Track.get_all_short_dmap
-    Track.get{|track,i| track.to_short_dmap(i)}
+  def self.get_all_short_dmap
+    self.get{|track,i| track.to_short_dmap(i)}
   end
 
   def initialize(args)
@@ -42,51 +42,26 @@ class Track
 
       @info = Hash.new
       @path = args[:path]
-      @file = MP4Info.open(@path)
-      lookup_table = {
-        album:                   'ALB',
-        apple_store_id:          'APID',
-        artist:                  'ART',           
-        comment:                 'CMT',
-        compilation:             'CPIL',          
-        copyright:               'CPRT',          
-        year:                    'DAY',           
-        disk_number_and_total:   'DISK',          
-        genre:                   'GNRE',          
-        grouping:                'GRP',           
-        title:                   'NAM',           
-        rating:                  'RTNG',          
-        tempo:                   'TMPO',          
-        encoder:                 'TOO',
-        track_number_and_total:  'TRKN',
-        track_number:            Proc.new {self.track_number_and_total[0]},
-        track_total:             Proc.new {self.track_number_and_total[1]},
-        author:                  'WRT',
-        mpeg_version:            'VERSION',      
-        layer:                   'LAYER',       
-        bitrate:                 'BITRATE',       
-        frequency:               'FREQUENCY',
-        bytes:                   'SIZE',
-        total_seconds:           'SECS',
-        minutes:                 'MM',
-        seconds:                 'SS',
-        milliseconds:            'MS',
-        formatted_time:          'TIME',
-        copyright:               'COPYRIGHT',
-        encrypted:               'ENCRYPTED',
-        _id:                     Proc.new {Digest::MD5.file(@path).hexdigest},
-        itunes_id:               Proc.new {MongoSequence[:global].next},
-        path:                    Proc.new {@path}
-      }
 
-      lookup_table.each_pair do |key, value|
+      track_type = select_track_type(@path)
+      if track_type == nil
+        raise "Not a valid filetype: #{@path}"
+      end
+
+      if track_type == nil
+        return nil
+      end
+
+      file = track_type.file
+
+      track_type.lookup_table.each_pair do |key, value|
 
         if value.is_a? Proc
-          @info[key] = instance_eval &value
+          @info[key] = value.call(file)
           next
         end
-    
-        @info[key] = @file.send(value)
+
+        @info[key] = file.send(value)
       end
 
     elsif args.has_key? :hash
@@ -110,25 +85,19 @@ class Track
   end
 
   def to_json
-    json = {}
-    @info.each_pair do |key, value|
-      json[key] = self.send(key.to_sym)
-    end
-    json["_id"] = self._id
-    json
+    @info
   end
 
   def to_dmap(id)
-    p @info
     DMAP::Tag.new(:mlit,
       [
         DMAP::Tag.new(:mikd, 2),
         DMAP::Tag.new(:miid, self.itunes_id),
-        DMAP::Tag.new(:minm, self.title),
+        DMAP::Tag.new(:minm, self.title.unpack("a*")[0]),
         DMAP::Tag.new(:mper, self.itunes_id),
-        DMAP::Tag.new(:asal, self.album),
+        DMAP::Tag.new(:asal, self.album.unpack("a*")[0]),
         DMAP::Tag.new(:agrp, ""),
-        DMAP::Tag.new(:asar, self.artist),
+        DMAP::Tag.new(:asar, self.artist.unpack("a*")[0]),
         DMAP::Tag.new(:asbr, self.bitrate),
         DMAP::Tag.new(:asbt, 0),
         DMAP::Tag.new(:ascm, ""),
@@ -140,8 +109,8 @@ class Track
         DMAP::Tag.new(:asdn, 0),
         DMAP::Tag.new(:asdb, 0),
         DMAP::Tag.new(:aseq, ""),
-        DMAP::Tag.new(:asfm, "m4a"),
-        DMAP::Tag.new(:asgn, self.genre),
+        DMAP::Tag.new(:asfm, self.filetype),
+        DMAP::Tag.new(:asgn, self.genre.unpack("a*")[0]),
         DMAP::Tag.new(:asdt, ""),
         DMAP::Tag.new(:asrv, 0),
         DMAP::Tag.new(:assr, 0),
@@ -166,9 +135,23 @@ class Track
         DMAP::Tag.new(:asdk, 0),
         DMAP::Tag.new(:miid, self.itunes_id),
         DMAP::Tag.new(:mcti, self.itunes_id),
-        DMAP::Tag.new(:minm, self.title)
+        DMAP::Tag.new(:minm, self.title.encode('US-ASCII', {:undef => :replace}))
       ]
     )
+  end
+
+  def select_track_type(path)
+    puts TrackTypes.constants
+    TrackTypes.constants.each do |track_type|
+      klass = TrackTypes.const_get(track_type)
+      puts "Path: #{path}"
+      if klass.can_handle?(path)
+        thing = klass.new(path)
+        puts "Thing class: #{thing.class}"
+        return thing
+      end
+    end
+    nil
   end
 
 end

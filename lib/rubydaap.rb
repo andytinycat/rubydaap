@@ -13,6 +13,7 @@ require 'logger'
 require 'digest/md5'
 require 'mongo_sequence'
 require 'pp'
+require 'taglib'
 
 require_relative 'rubydaap/logging'
 require_relative 'rubydaap/track'
@@ -92,7 +93,7 @@ class App < Sinatra::Base
         mlid sid
       end
     end
-    p resp
+    p resp if $dmap_debug
     resp.to_dmap
   end
 
@@ -129,7 +130,7 @@ class App < Sinatra::Base
           musr vers
         end
       end
-      p resp
+      p resp if $dmap_debug
       body { 
         p resp if $dmap_debug
         resp.to_dmap 
@@ -218,7 +219,7 @@ class App < Sinatra::Base
 
   # Play a file
   # /databases/1/items/109.m4a?session-id=733
-  get %r{/databases/1/items/(\d+)\.m4a} do
+  get %r{/databases/1/items/(\d+)\.(.*)} do
     track = Track.get_by_itunes_id(params[:captures].first.to_i)
     send_file track.path 
   end

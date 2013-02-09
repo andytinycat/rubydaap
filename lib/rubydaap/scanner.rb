@@ -11,7 +11,7 @@ class Scanner
         if FileTest.directory?(path)
           next
         else
-          if File.extname(path) == ".m4a"
+          begin
             track = Track.new(:path => path)
             begin
               # Make sure we haven't already added it
@@ -22,6 +22,8 @@ class Scanner
             rescue Mongo::OperationFailure => e
               logger.error "Failed to store track in DB: #{e.message}"
             end 
+          rescue RuntimeError => e
+            puts e.message
           end
         end
       end
