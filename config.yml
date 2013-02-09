@@ -1,7 +1,6 @@
 server_name: Ruby DAAP Test
 port: 4567
 version: 0.1
-databases:
-  -
-    path: /Users/andy/testfiles
-    name: Test
+watch_paths:
+  - /Users/andy/Music
+  - /Users/andy/musictest

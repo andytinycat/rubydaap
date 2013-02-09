@@ -6,7 +6,9 @@ Bundler.require(:default)
 require 'logger'
 require 'digest/md5'
 require 'find'
+require 'singleton'
 
+require_relative 'rubydaap/dmapcache'
 require_relative 'rubydaap/track'
 require_relative 'rubydaap/scanner'
 
@@ -26,7 +28,7 @@ class App < Sinatra::Base
   $server_name = settings.server_name
 
   # Start scanner
-  scanner = Scanner.new("/Users/andy/Music", "/Users/andy/musictest")
+  scanner = Scanner.new(settings.watch_paths)
   scanner.run
 
   # Debug enabled
@@ -171,18 +173,27 @@ class App < Sinatra::Base
   # Song list
   get '/databases/1/items' do
     $log.info("Client #{request.ip} requesting list of items in database")
-    tracks = Track.get_all_dmap
-    resp = DMAP::Tag.new(:adbs, [
-      DMAP::Tag.new(:mstt, 200),
-      DMAP::Tag.new(:muty, 0),
-      DMAP::Tag.new(:mtco, tracks.length),
-      DMAP::Tag.new(:mrco, tracks.length),
-      DMAP::Tag.new(:mlcl, 
-        tracks
-      )
-    ])
-    p resp if $dmap_debug
-    resp.to_dmap
+    cached = DMAPCache.instance.tracks
+    if cached
+      $log.info "Using DMAP cache for list of items in database"
+      cached
+    else
+      $log.info "Cache empty; regenerating list of items in database"
+      tracks = Track.get_all_dmap
+      resp = DMAP::Tag.new(:adbs, [
+        DMAP::Tag.new(:mstt, 200),
+        DMAP::Tag.new(:muty, 0),
+        DMAP::Tag.new(:mtco, tracks.length),
+        DMAP::Tag.new(:mrco, tracks.length),
+        DMAP::Tag.new(:mlcl, 
+          tracks
+        )
+      ])
+      p resp if $dmap_debug
+      dmap = resp.to_dmap
+      DMAPCache.instance.tracks = dmap
+      dmap
+    end
   end
 
   # Playlist list
@@ -213,18 +224,27 @@ class App < Sinatra::Base
   # Song list in playlist
   get '/databases/1/containers/1/items' do
     $log.info("Client #{request.ip} requesting list of items in playlist")
-    tracks = Track.get_all_short_dmap
-    resp = DMAP::Tag.new(:apso, [
-      DMAP::Tag.new(:mstt, 200),
-      DMAP::Tag.new(:muty, 0),
-      DMAP::Tag.new(:mtco, tracks.length),
-      DMAP::Tag.new(:mrco, tracks.length),
-      DMAP::Tag.new(:mlcl, 
-        tracks
-      )
-    ])
-    p resp if $dmap_debug
-    resp.to_dmap
+    cached = DMAPCache.instance.playlist_items
+    if cached
+      $log.info "Using cache for list of items in playlist"
+      cached
+    else
+      $log.info "Cache empty; regenerating list of items in playlist"
+      tracks = Track.get_all_short_dmap
+      resp = DMAP::Tag.new(:apso, [
+        DMAP::Tag.new(:mstt, 200),
+        DMAP::Tag.new(:muty, 0),
+        DMAP::Tag.new(:mtco, tracks.length),
+        DMAP::Tag.new(:mrco, tracks.length),
+        DMAP::Tag.new(:mlcl, 
+          tracks
+        )
+      ])
+      p resp if $dmap_debug
+      dmap = resp.to_dmap
+      DMAPCache.instance.playlist_items = dmap
+      dmap      
+    end
   end
 
   # Play a file
