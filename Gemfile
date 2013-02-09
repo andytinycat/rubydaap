@@ -5,7 +5,7 @@ gem "mongo"
 gem "bson_ext"
 gem "dnssd"
 gem "thin"
-gem "dmap-ng" 
+gem "dmap-ng", :git => "https://github.com/andytinycat/dmap-ng", :require => "dmap-ng" 
 gem "mp4info", :git => "https://github.com/andytinycat/ruby-mp4info", :require => 'mp4info'
 gem "async_sinatra", :require => 'sinatra/async'
 gem "mongo_sequence", :git => "https://github.com/andytinycat/mongo_sequence"

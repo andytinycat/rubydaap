@@ -1,4 +1,10 @@
 GIT
+  remote: https://github.com/andytinycat/dmap-ng
+  revision: 9a2dd6a421a866bd9067bd45e1de348cd0dc81d5
+  specs:
+    dmap-ng (0.2.6)
+
+GIT
   remote: https://github.com/andytinycat/mongo_sequence
   revision: 91aef8ba667ac37f81770419e726a3b7ee62d0e2
   specs:
@@ -22,14 +28,13 @@ GEM
     bson_ext (1.8.2)
       bson (~> 1.8.2)
     daemons (1.1.9)
-    dmap-ng (0.2.6)
     dnssd (2.0)
     eventmachine (1.0.0)
     ffi (1.3.1)
     listen (0.7.2)
     mongo (1.8.2)
       bson (~> 1.8.2)
-    rack (1.5.1)
+    rack (1.5.2)
     rack-protection (1.3.2)
       rack
     rack-test (0.6.2)
@@ -63,7 +68,7 @@ PLATFORMS
 DEPENDENCIES
   async_sinatra
   bson_ext
-  dmap-ng
+  dmap-ng!
   dnssd
   listen
   mongo
