@@ -46,14 +46,14 @@ Installing
 Mac OS X
 --------
     
-1. Get the files and the gems required:
+1) Get the files and the gems required:
 
     git clone https://github.com/andytinycat/rubydaap
     cd rubydaap
     bundle install
 
-2. Edit the config file to point to your music dirs (see Config below)
+2) Edit the config file to point to your music dirs (see Config below)
 
-3. Start the server
+3) Start the server
 
     bin/start
